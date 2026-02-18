@@ -39,7 +39,18 @@
  *          0x03 = reset both encoder positions to zero
  *
  * Resolution: 4 counts per encoder detent (raw quadrature transitions).
- *             Divide by 4 on the host for per-detent values.
+ *             The quadrature decoder tracks all 4 state transitions per
+ *             detent for maximum resolution. Use deltaTick2() in the
+ *             Encoder library for 1 count per detent if preferred.
+ *
+ * Host-Side Delta Tracking:
+ *   Position registers hold a running counter (int16_t) that wraps at
+ *   ±32768. The host should compute movement as:
+ *     int16_t delta = (int16_t)((uint16_t)current - (uint16_t)previous);
+ *   Unsigned subtraction yields the correct signed delta even across
+ *   wraparound, as long as |delta| < 32768 between polls — easily
+ *   satisfied at any reasonable poll rate for human-operated encoders.
+ *   This eliminates the need for reset commands to avoid overflow.
  *
  * Based on the John-Lluch Encoder library timer-based polling approach.
  * Author: Iman Mohammadi (iman.mohamadi.dev@gmail.com)
@@ -165,8 +176,8 @@ void loop()
     }
   }
 
-  enc1Position += encoder1.delta();
-  enc2Position += encoder2.delta();
+  enc1Position += encoder1.deltaTick2();
+  enc2Position += encoder2.deltaTick2();
 
   uint8_t buttons = 0;
   if (encoder1.button()) buttons |= 0x01;
