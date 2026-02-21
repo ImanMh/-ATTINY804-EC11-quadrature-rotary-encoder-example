@@ -15,7 +15,7 @@
  *   Pin 7  (PB2)  - Interrupt Output (push-pull, active-low default)
  *   Pin 8  (PB1)  - I2C SDA
  *   Pin 9  (PB0)  - I2C SCL
- *   Pin 10 (PA0)  - UPDI (programming only)
+ *   Pin 10 (PA0)  - UPDI (programming) / Encoder 3 Button (if PA0_AS_GPIO)
  *   Pin 11 (PA1)  - Encoder 1 Channel A
  *   Pin 12 (PA2)  - Encoder 1 Channel B
  *   Pin 13 (PA3)  - Encoder 1 Push Button
@@ -30,9 +30,9 @@
  *   0x03  ENC2_POS_H   Encoder 2 position, high byte
  *   0x04  ENC3_POS_L   Encoder 3 position, low byte
  *   0x05  ENC3_POS_H   Encoder 3 position, high byte
- *   0x06  BUTTONS      Button states: bit0 = enc1, bit1 = enc2 (1 = pressed)
- *                       Encoder 3 has no button pin.
- *   0x07  STATUS       Device status / firmware version (0x02)
+ *   0x06  BUTTONS      Button states: bit0=enc1, bit1=enc2, bit2=enc3 (1=pressed)
+ *                       Encoder 3 button only available with PA0_AS_GPIO.
+ *   0x07  STATUS       Device status / firmware version
  *
  * Interrupt Output (PB2):
  *   Directly driven push-pull. Asserted when any encoder position changes
@@ -75,6 +75,12 @@
 // ============================================================================
 #define I2C_ADDRESS     0x40
 
+// Set to true to use PA0 (UPDI pin) as Encoder 3 button.
+// REQUIRES: megaTinyCore fuse "UPDI/Reset pin" set to "GPIO".
+// WARNING:  This permanently disables UPDI programming.
+//           A 12V high-voltage programmer is needed to recover UPDI.
+#define PA0_AS_GPIO     false
+
 #define ENC1_A          PIN_PA1
 #define ENC1_B          PIN_PA2
 #define ENC1_BTN        PIN_PA3
@@ -85,6 +91,7 @@
 
 #define ENC3_A          PIN_PA7
 #define ENC3_B          PIN_PB3
+#define ENC3_BTN        (PA0_AS_GPIO ? PIN_PA0 : 255)
 
 #define INT_PIN         PIN_PB2
 
@@ -109,14 +116,14 @@
 #define CMD_RESET_ENC2  0x02
 #define CMD_RESET_ENC3  0x04
 
-#define FW_VERSION      0x03
+#define FW_VERSION      0x01
 
 // ============================================================================
-// Encoder Objects (encoder 3 has no button — pass 255)
+// Encoder Objects
 // ============================================================================
 Encoder encoder1(ENC1_A, ENC1_B, ENC1_BTN);
 Encoder encoder2(ENC2_A, ENC2_B, ENC2_BTN);
-Encoder encoder3(ENC3_A, ENC3_B, 255);
+Encoder encoder3(ENC3_A, ENC3_B, ENC3_BTN);
 Encoder *encoderArray[] = { &encoder1, &encoder2, &encoder3 };
 
 // ============================================================================
@@ -227,6 +234,7 @@ void loop()
   uint8_t buttons = 0;
   if (encoder1.button()) buttons |= 0x01;
   if (encoder2.button()) buttons |= 0x02;
+  if (encoder3.button()) buttons |= 0x04;
 
   static uint8_t prevButtons = 0;
 

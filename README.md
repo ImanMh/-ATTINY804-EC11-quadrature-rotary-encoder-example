@@ -6,7 +6,7 @@ Uses a proven timer-based polling approach (10kHz via TCB0) for reliable, bounce
 
 ## Features
 
-- **Three independent quadrature encoders** — two with push-buttons, one rotation-only
+- **Three independent quadrature encoders** — two with push-buttons, third rotation-only (or with button via `PA0_AS_GPIO`)
 - **I2C slave interface** with register-based read protocol
 - **Interrupt output pin** — signals the host on any encoder/button state change, cleared on I2C read
 - **Configurable interrupt polarity** — active-low (default) or active-high via I2C command
@@ -16,39 +16,60 @@ Uses a proven timer-based polling approach (10kHz via TCB0) for reliable, bounce
 
 ## Pin Assignment (14-pin SOIC)
 
+**Default mode** (`PA0_AS_GPIO = false`):
+
 ```
-         ┌──────────┐
-   VDD ──┤ 1    14 ├── GND
-ENC2_A ──┤ 2    13 ├── ENC1_BTN   (PA3)
-  (PA4)  │          │
-ENC2_B ──┤ 3    12 ├── ENC1_B     (PA2)
-  (PA5)  │          │
-ENC2_BTN─┤ 4    11 ├── ENC1_A     (PA1)
-  (PA6)  │          │
-ENC3_A ──┤ 5    10 ├── UPDI       (PA0)
-  (PA7)  │          │
-ENC3_B ──┤ 6     9 ├── I2C SCL    (PB0)
-  (PB3)  │          │
-INT    ──┤ 7     8 ├── I2C SDA    (PB1)
-  (PB2)  └──────────┘
+              ┌──────────┐
+        VDD ──┤ 1     14 ├── GND
+     ENC2_A ──┤ 2     13 ├── ENC1_BTN   (PA3)
+       (PA4)  │          │
+     ENC2_B ──┤ 3     12 ├── ENC1_B     (PA2)
+       (PA5)  │          │
+   ENC2_BTN ──┤ 4     11 ├── ENC1_A     (PA1)
+       (PA6)  │          │
+     ENC3_A ──┤ 5     10 ├── UPDI       (PA0)
+       (PA7)  │          │
+     ENC3_B ──┤ 6      9 ├── I2C SCL    (PB0)
+       (PB3)  │          │
+        INT ──┤ 7      8 ├── I2C SDA    (PB1)
+       (PB2)  └──────────┘
 ```
 
-| Pin | Port | Function | Notes |
-|-----|------|----------|-------|
-| 1 | VDD | Power | 3.3V or 5V |
-| 2 | PA4 | Encoder 2 Channel A | Internal pull-up enabled |
-| 3 | PA5 | Encoder 2 Channel B | Internal pull-up enabled |
-| 4 | PA6 | Encoder 2 Push Button | Internal pull-up enabled, active low |
-| 5 | PA7 | Encoder 3 Channel A | Internal pull-up enabled |
-| 6 | PB3 | Encoder 3 Channel B | Internal pull-up enabled |
-| 7 | PB2 | Interrupt Output | Push-pull, active-low by default |
-| 8 | PB1 | I2C SDA | TWI0 default pin |
-| 9 | PB0 | I2C SCL | TWI0 default pin |
-| 10 | PA0 | UPDI | Programming/debug only |
-| 11 | PA1 | Encoder 1 Channel A | Internal pull-up enabled |
-| 12 | PA2 | Encoder 1 Channel B | Internal pull-up enabled |
-| 13 | PA3 | Encoder 1 Push Button | Internal pull-up enabled, active low |
-| 14 | GND | Ground | |
+**With `PA0_AS_GPIO = true`** (UPDI sacrificed for Enc3 button):
+
+```
+              ┌──────────┐
+        VDD ──┤ 1     14 ├── GND
+     ENC2_A ──┤ 2     13 ├── ENC1_BTN   (PA3)
+       (PA4)  │          │
+     ENC2_B ──┤ 3     12 ├── ENC1_B     (PA2)
+       (PA5)  │          │
+   ENC2_BTN ──┤ 4     11 ├── ENC1_A     (PA1)
+       (PA6)  │          │
+     ENC3_A ──┤ 5     10 ├── ENC3_BTN   (PA0)
+       (PA7)  │          │
+     ENC3_B ──┤ 6      9 ├── I2C SCL    (PB0)
+       (PB3)  │          │
+        INT ──┤ 7      8 ├── I2C SDA    (PB1)
+       (PB2)  └──────────┘
+```
+
+| Pin | Port | Default Function | PA0_AS_GPIO Function | Notes |
+|-----|------|------------------|----------------------|-------|
+| 1 | VDD | Power | Power | 3.3V or 5V |
+| 2 | PA4 | Encoder 2 Channel A | same | Internal pull-up |
+| 3 | PA5 | Encoder 2 Channel B | same | Internal pull-up |
+| 4 | PA6 | Encoder 2 Push Button | same | Internal pull-up, active low |
+| 5 | PA7 | Encoder 3 Channel A | same | Internal pull-up |
+| 6 | PB3 | Encoder 3 Channel B | same | Internal pull-up |
+| 7 | PB2 | Interrupt Output | same | Push-pull, active-low default |
+| 8 | PB1 | I2C SDA | same | TWI0 default pin |
+| 9 | PB0 | I2C SCL | same | TWI0 default pin |
+| 10 | PA0 | UPDI (programming) | Encoder 3 Button | **Disables UPDI permanently** |
+| 11 | PA1 | Encoder 1 Channel A | same | Internal pull-up |
+| 12 | PA2 | Encoder 1 Channel B | same | Internal pull-up |
+| 13 | PA3 | Encoder 1 Push Button | same | Internal pull-up, active low |
+| 14 | GND | Ground | Ground | |
 
 ## I2C Interface
 
@@ -66,12 +87,12 @@ Default: **0x40** (configurable via `I2C_ADDRESS` in the sketch).
 | 0x03 | ENC2_POS_H | R | Encoder 2 position, high byte |
 | 0x04 | ENC3_POS_L | R | Encoder 3 position, low byte |
 | 0x05 | ENC3_POS_H | R | Encoder 3 position, high byte |
-| 0x06 | BUTTONS | R | Button states (bit 0 = enc1, bit 1 = enc2; 1 = pressed) |
-| 0x07 | STATUS | R | Firmware version (currently 0x02) |
+| 0x06 | BUTTONS | R | Button states: bit0=enc1, bit1=enc2, bit2=enc3 (1=pressed) |
+| 0x07 | STATUS | R | Firmware version (currently 0x03) |
 
 Positions are signed 16-bit integers (`int16_t`), stored little-endian (low byte first). Range: -32768 to +32767.
 
-Encoder 3 has no button (no pin available). Its state is not represented in the BUTTONS register.
+Encoder 3 button (bit 2) is only active when `PA0_AS_GPIO = true`. In default mode it always reads 0.
 
 ### Interrupt Output (PB2)
 
