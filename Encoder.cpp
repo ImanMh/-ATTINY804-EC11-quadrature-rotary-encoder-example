@@ -139,7 +139,9 @@ void Encoder::compute()
 
 int Encoder::delta()
 {
+  noInterrupts();
   unsigned int v = _encoderValueVL;
+  interrupts();
   int d = v - _encoderValue;
   _encoderValue = v;
   return d;
@@ -147,7 +149,9 @@ int Encoder::delta()
 
 int Encoder::deltaTick()
 {
+  noInterrupts();
   unsigned int v = _encoderTickVL;
+  interrupts();
   int d = v - _encoderTick;
   _encoderTick = v;
   return d;
@@ -155,7 +159,9 @@ int Encoder::deltaTick()
 
 int Encoder::deltaTick2()
 {
+  noInterrupts();
   unsigned int v = _encoderTick2VL;
+  interrupts();
   int d = v - _encoderTick2;
   _encoderTick2 = v;
   return d;
