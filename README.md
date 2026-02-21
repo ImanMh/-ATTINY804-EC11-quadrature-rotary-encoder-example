@@ -258,4 +258,3 @@ The encoder algorithm is based on the **John-Lluch Encoder library** which uses 
 ## Author
 
 **Iman Mohammadi**
-Email: iman.mohamadi.dev@gmail.com
